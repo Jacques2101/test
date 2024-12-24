@@ -1,0 +1,5 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+streamlit==1.24.1
+pandas==2.2.3
+sqlalchemy
