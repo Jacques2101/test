@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine
+import sqlalchemy as sql
+# from sqlalchemy import create_engine
 import pandas as pd
 import streamlit as st
 
@@ -10,7 +11,7 @@ def lecture_bdd(DATABASE, table, colonnes=None, condition=None):
     PASSWORD = 'MonceauAM2021!'
     DRIVER = 'ODBC+Driver+17+for+SQL+Server'
     connection_string = f'mssql+pyodbc://{USERNAME}:{PASSWORD}@{SERVER}:1433/{DATABASE}?driver={DRIVER}'
-    engine = create_engine(connection_string)
+    engine = sql.create_engine(connection_string)
     # Requête SQL
     query = f"SELECT {', '.join(colonnes) if colonnes else '*'} FROM {table}"
     if condition:
