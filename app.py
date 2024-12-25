@@ -1,31 +1,15 @@
-import pandas as pd
 import streamlit as st
-import pyodbc
+from sqlalchemy import create_engine
+import pandas as pd
 
-@st.cache_resource
-def init_connection():
-    return pyodbc.connect(
-        "DRIVER={ODBC Driver 17 for SQL Server};SERVER="
-        + st.secrets["server"]
-        + ";DATABASE="
-        + st.secrets["database"]
-        + ";UID="
-        + st.secrets["username"]
-        + ";PWD="
-        + st.secrets["password"]
-    )
-conn = init_connection()
+# Create a SQLAlchemy engine
+def create_engine_url():
+    return f"mssql+pyodbc://{st.secrets["username"]}:{st.secrets["username"]}@{st.secrets["server"]}/{st.secrets["database"]}?driver=ODBC+Driver+17+for+SQL+Server"
 
-# Perform query.
-# Uses st.cache_data to only rerun when the query changes or after 10 min.
-@st.cache_data(ttl=600)
-def run_query(query):
-    with conn.cursor() as cur:
-        cur.execute(query)
-        return cur.fetchall()
+engine = create_engine(create_engine_url())
 
-rows = run_query("SELECT * from benchmark_main;")
+# Use pandas to read the results of the query into a DataFrame
+query = "SELECT * from benchmark_main;"
+df = pd.read_sql_query(query, engine)
 
-# Print results.
-for row in rows:
-    st.write(f"{row[0]} has a :{row[1]}:")
+df
