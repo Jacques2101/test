@@ -1,21 +1,22 @@
 import pandas as pd
 import pyodbc
 
-# Initialiser la connexion
+@st.cache_resource
 def init_connection():
     return pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};SERVER="
-        + server
+        + st.secrets["server"]
         + ";DATABASE="
-        + database
+        + st.secrets["database"]
         + ";UID="
-        + username
+        + st.secrets["username"]
         + ";PWD="
-        + password
+        + st.secrets["password"]
     )
 conn = init_connection()
 
 # Fonction pour exécuter une requête et récupérer les résultats dans un DataFrame
+@st.cache_data
 def query_to_dataframe(query):
     with conn.cursor() as cur:
         cur.execute(query)
