@@ -1,15 +1,40 @@
-import streamlit as st
-from sqlalchemy import create_engine
 import pandas as pd
+import pyodbc
 
-# Create a SQLAlchemy engine
-def create_engine_url():
-    return f"mssql+pyodbc://{st.secrets["username"]}:{st.secrets["username"]}@{st.secrets["server"]}/{st.secrets["database"]}?driver=ODBC+Driver+17+for+SQL+Server"
+# Initialiser la connexion
+def init_connection():
+    return pyodbc.connect(
+        "DRIVER={ODBC Driver 17 for SQL Server};SERVER="
+        + server
+        + ";DATABASE="
+        + database
+        + ";UID="
+        + username
+        + ";PWD="
+        + password
+    )
+conn = init_connection()
 
-engine = create_engine(create_engine_url())
+# Fonction pour exécuter une requête et récupérer les résultats dans un DataFrame
+def query_to_dataframe(query):
+    with conn.cursor() as cur:
+        cur.execute(query)
+        # Récupérer les noms des colonnes
+        columns = [column[0] for column in cur.description]
+        # Récupérer les données (convertir en liste pour correspondre aux colonnes)
+        data = [list(row) for row in cur.fetchall()]
+    # Vérifier les dimensions des données
+    if len(data) > 0 and len(data[0]) == len(columns):
+        # Créer un DataFrame
+        return pd.DataFrame(data, columns=columns)
+    else:
+        raise ValueError(
+            f"Shape mismatch: Data shape is {len(data)}, expected columns {len(columns)}"
+        )
 
-# Use pandas to read the results of the query into a DataFrame
-query = "SELECT * from benchmark_main;"
-df = pd.read_sql_query(query, engine)
+# Exécuter la requête et convertir les résultats
+query = "SELECT * FROM benchmark_main;"
+df = query_to_dataframe(query)
 
+# Afficher les premières lignes du DataFrame
 df
