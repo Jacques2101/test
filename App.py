@@ -1,36 +1,31 @@
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import URL
+import streamlit as st
+import pyodbc
 
-def lecture_bdd(DATABASE, table, colonnes=None, condition=None):
-    from sqlalchemy.orm import sessionmaker
-    SERVER = 'vestathena.database.windows.net'
-    USERNAME = 'login_MAM_read'
-    PASSWORD = 'MonceauAM2021!'
-    DRIVER = 'ODBC Driver 17 for SQL Server'
-
-    connection_url = URL.create(
-        drivername="mssql+pyodbc",
-        username=USERNAME,
-        password=PASSWORD,
-        host=SERVER,
-        port=1433,
-        database=DATABASE,
-        query={"driver": DRIVER}
+@st.cache_resource
+def init_connection():
+    return pyodbc.connect(
+        "DRIVER={ODBC Driver 17 for SQL Server};SERVER="
+        + st.secrets["server"]
+        + ";DATABASE="
+        + st.secrets["database"]
+        + ";UID="
+        + st.secrets["username"]
+        + ";PWD="
+        + st.secrets["password"]
     )
+conn = init_connection()
 
-    # Créez un moteur
-    engine = create_engine(connection_url)
+# Perform query.
+# Uses st.cache_data to only rerun when the query changes or after 10 min.
+@st.cache_data(ttl=600)
+def run_query(query):
+    with conn.cursor() as cur:
+        cur.execute(query)
+        return cur.fetchall()
 
-    # Ouvrez une connexion explicite
-    with engine.connect() as connection:
-        # Construire la requête SQL
-        query = f"SELECT {', '.join(colonnes) if colonnes else '*'} FROM {table}"
-        if condition:
-            query += f" WHERE {condition}"
-        # Lire les données avec Pandas
-        df = pd.read_sql(query, connection)
-    return df
-# Utilisation
-df = lecture_bdd("vestathena_db", "benchmark_main")
-df
+rows = run_query("SELECT * from mytable;")
+
+# Print results.
+for row in rows:
+    st.write(f"{row[0]} has a :{row[1]}:")
